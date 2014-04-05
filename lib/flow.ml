@@ -106,6 +106,33 @@ type tls_internal_state = [
   | `Established
 ]
 
+type rekeying_parameters = {
+  ciphersuite   : Ciphersuite.ciphersuite ;
+  version       : tls_version ;
+  certificate   : Asn_grammars.certificate (* option?? (due to anon kex) *) ;
+  server_name   : string (* option?? *) ;
+  client_verify : Cstruct.t ;
+  server_verify : Cstruct.t }
+
+type tls_client_state =
+    (* client_random, supported ciphers, log *)
+  | ClientHelloSent of Cstruct.t * Ciphersuite.ciphersuite list * Cstruct.t list
+    (* client_random, server_random, log *)
+  | ServerHelloReceived of Cstruct.t * Cstruct.t * Cstruct.t list
+    (* client_random, server_random, log *)
+  | ServerCertificateReceived of Cstruct.t * Cstruct.t * Cstruct.t list
+    (* client_random, server_random, diffie helmann, log *)
+  | ServerKeyExchangeReceived of Cstruct.t * Cstruct.t * dh_state * Cstruct.t list
+    (* master_secret, log *)
+  | ClientFinishedSent of Cstruct.t * Cstruct.t list
+  | Established
+
+type tls_server_cate =
+  | Initial
+  | ServerHelloDoneSent of Cstruct.t * Cstruct.t * (* either dh_state OR private key *) Cstruct.t list
+  | ClientKeyExchangeReceived of Cstruct.t * Cstruct.t list (* crypto_ctx *)
+  | Established
+
 let state_to_string = function
   | `Initial         -> "Initial"
   | `Handshaking _   -> "Shaking hands"
